@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
 
-require "biggles"
+require 'biggles'
 
 puts Biggles.hello(ARGV[0])
