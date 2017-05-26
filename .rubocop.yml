@@ -1,5 +1,9 @@
-Style/EndOfLine:
+Layout/EndOfLine:
   EnforcedStyle: lf
 
 Lint/ScriptPermission:
   Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - 'biggles.gemspec'

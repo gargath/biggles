@@ -1,6 +1,9 @@
 require 'bundler/setup'
 require 'biggles'
+require 'biggles/schema_helper'
 require 'biggles/job/oneshot'
+require 'otr-activerecord/activerecord'
+require 'otr-activerecord/middleware/connection_management.rb'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
