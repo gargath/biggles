@@ -1,5 +1,6 @@
 require 'bundler/setup'
 require 'biggles'
+require 'biggles/job/oneshot'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
