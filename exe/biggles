@@ -2,4 +2,44 @@
 
 require 'biggles'
 
-puts Biggles.hello(ARGV[0])
+main_command = ARGV.shift
+
+if main_command.nil? || %w[-h --help].include?(main_command)
+  puts 'Usage: biggles [command] <-c config_file>'
+  puts
+  puts '  start         - Start the Biggles job processor'
+  puts '  create_schema - Create the Biggles database schema using your'
+  puts '                  existing ActiveRecord configuration'
+  puts '  list          - List all managed jobs and their status'
+  puts
+  exit 0
+elsif %w[-v --version].include? main_command
+  puts 'Biggles Job Processor'
+  puts "  Version #{Biggles::VERSION}"
+  exit 0
+end
+unless %w[start create_schema list].include? main_command
+  puts "Unknown Command #{main_command}. Try biggles --help"
+  exit 1
+end
+
+trap 'SIGINT' do
+  puts 'Ctrl-C received. Exiting safely...'
+  sleep 5
+  exit 0
+end
+
+trap 'SIGTERM' do
+  puts 'Kill received. Exiting safely...'
+  sleep 5
+  exit 0
+end
+
+@logger = Logger.new(STDOUT)
+
+if main_command == 'start'
+  @logger.info 'Biggles starting...'
+  Kernel.loop do
+    sleep 1
+  end
+end
