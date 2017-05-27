@@ -7,3 +7,12 @@ Lint/ScriptPermission:
 Metrics/BlockLength:
   Exclude:
     - 'biggles.gemspec'
+
+Metrics/MethodLength:
+  Max: 40
+
+Metrics/AbcSize:
+  Max: 25
+
+Metrics/LineLength:
+  Max: 120
