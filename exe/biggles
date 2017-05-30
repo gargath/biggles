@@ -10,6 +10,7 @@ if main_command.nil? || %w[-h --help].include?(main_command)
   puts '  start         - Start the Biggles job processor'
   puts '  create_schema - Create the Biggles database schema using your'
   puts '                  existing ActiveRecord configuration'
+  puts '  remove_schema - Safely remove biggles database tables'
   puts '  list          - List all managed jobs and their status'
   puts
   exit 0

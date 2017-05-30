@@ -5,12 +5,11 @@ module Biggles
     # One-Shot job type. These jobs will be executed as soon as a worker is
     # available.
     class OneShot < ActiveRecord::Base
-      attr_accessor :processor
-      attr_accessor :options
+      attr_readonly :processor, :id
+      self.table_name = 'biggles_one_shot'
 
-      def readonly?
-        new_record? ? false : true
-      end
+      private
+
     end
   end
 end

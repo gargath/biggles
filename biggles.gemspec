@@ -30,4 +30,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'sqlite3', '~> 1.3'
 
   spec.add_runtime_dependency 'activerecord', '~> 4'
+  spec.add_runtime_dependency 'require_all', '1.4.0'
 end
