@@ -13,7 +13,8 @@ module Biggles
           'loglevel'       => 'INFO',
           'workers'        => 2,
           'sweep_interval' => 30,
-          'jobs_dir'       => 'jobs'
+          'jobs_dir'       => 'jobs',
+          'activerecord_logging' => false
       }
       if File.exist?(filename)
         begin
