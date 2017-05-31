@@ -7,9 +7,6 @@ module Biggles
     class OneShot < ActiveRecord::Base
       attr_readonly :processor, :id
       self.table_name = 'biggles_one_shot'
-
-      private
-
     end
   end
 end

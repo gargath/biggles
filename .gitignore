@@ -13,3 +13,4 @@
 
 # build artifacts
 *.gem
+*.sqlite3

@@ -10,11 +10,11 @@ module Biggles
   module CLI
     def self.parse_config(filename)
       options = {
-          'loglevel'       => 'INFO',
-          'workers'        => 2,
-          'sweep_interval' => 30,
-          'jobs_dir'       => 'jobs',
-          'activerecord_logging' => false
+        'loglevel'       => 'INFO',
+        'workers'        => 2,
+        'sweep_interval' => 30,
+        'jobs_dir'       => 'jobs',
+        'activerecord_logging' => false
       }
       if File.exist?(filename)
         begin
@@ -46,10 +46,8 @@ module Biggles
       opts = parse_config('config/biggles.yml')
       begin
         connect(opts)
-        puts '<>now connected<>'
-        Biggles::create_tables
-        puts '<>schema created<>'
-        puts "Database schema successfully created"
+        Biggles.create_tables
+        puts 'Database schema successfully created'
       rescue => e
         puts "Failed to create database schema: #{e.message}"
       end
@@ -61,9 +59,7 @@ module Biggles
       begin
         if opts.key? 'database'
           puts 'Using DB configuration from Biggles config file'
-          puts '<>pre-configure<>'
           OTR::ActiveRecord.configure_from_hash! opts['database']
-          puts '<>post-configure<>'
         elsif File.exist?("#{Dir.pwd}/config/database.yml")
           puts "No DB configuration found. Using default #{Dir.pwd}/config/database.yml"
           OTR::ActiveRecord.configure_from_file!(
@@ -73,7 +69,6 @@ module Biggles
           STDERR.puts 'No DB configuration found. Biggles cannot continue.'
           exit 2
         end
-        puts '<>configured<>'
         ActiveRecord::Base.connection
       rescue => e
         STDERR.puts 'Failed to configure DB connection:'

@@ -1,0 +1,8 @@
+interval_seconds: 30
+loglevel: debug
+database:
+  adapter: 'sqlite3'
+  database: 'prod.sqlite3'
+  pool: 5
+  timeout: 5000
+activerecord_logging: false
