@@ -25,6 +25,8 @@ when 'start'
   Biggles::CLI.start
 when 'create_schema'
   Biggles::CLI.create_schema
+when 'remove_schema'
+  Biggles::CLI.remove_schema
 when 'list'
   Biggles::CLI.list
 else

@@ -1,5 +1,8 @@
 require 'thread'
+require 'json'
 require 'biggles/job/oneshot'
+require 'biggles/heartbeat'
+require 'concurrent'
 
 module Biggles
   # Class to start and manage worker threads
@@ -17,82 +20,113 @@ module Biggles
       else
         ActiveRecord::Base.logger = nil
       end
-      @db_access = Mutex.new
+      @exiting = false
+      @workers = Concurrent::FixedThreadPool.new(@opts['workers'],
+                                                 idletime: 60,
+                                                 max_queue: @opts['workers'],
+                                                 fallback_policy: :abort)
     end
 
     def start
       @logger.info 'Biggles starting...'
       @logger.debug 'Debug logging enabled'
-      @exiting = false
+      trap_signals
+      start_heartbeat
       loop do
-        Signal.trap('INT') do
-          puts 'Caught SIGINT during processing. Exiting cleanly...'
-          @exiting = true
-        end
-        Signal.trap('TERM') do
-          puts 'Caught SIGTERM during processing. Exiting cleanly...'
-          @exiting = true
-        end
-        find_and_start_job
-        @logger.debug 'Finished execution sweep'
-        Signal.trap('INT') do
-          puts 'Caught SIGINT during sleep.'
-          @exiting = true
-          throw :sigint
-        end
-        Signal.trap('TERM') do
-          puts 'Caught SIGTERM during sleep.'
-          @exiting = true
-          throw :sigint
-        end
-        catch :sigint do
-          sleep @opts['sweep_interval'] unless @exiting
+        job = find_job if @workers.remaining_capacity > 0
+        if job
+          begin
+            @logger.debug "Job #{job.id} enqueued, waiting for worker."
+            @workers.post { run_job(job) }
+          rescue Concurrent::RejectedExecutionError
+            @logger.warn 'Failed to enqueue job. Queue full.'
+            job.status = 'SCHEDULABLE'
+            job.save
+          end
+        else
+          sleep 2
         end
         break if @exiting
       end
-      @logger.info 'Exiting...'
+      shutdown
+      @logger.warn 'Shutdown complete'
     end
 
     private
 
-    def find_and_start_job
-      @workers = []
-      @opts['workers'].times do |n|
-        @db_access.synchronize do
-          job = Biggles::Job::OneShot.where(status: 'SCHEDULABLE').first
-          if job
-            job.status = 'PENDING'
-            job.save
-            @workers << Thread.new { process_job(job, n) }
-          end
-        end
+    def trap_signals
+      Signal.trap('INT') do
+        puts 'Caught SIGINT during processing. Exiting cleanly...'
+        @exiting = true
       end
-      @workers.each(&:join)
+      Signal.trap('TERM') do
+        puts 'Caught SIGTERM during processing. Exiting cleanly...'
+        @exiting = true
+      end
     end
 
-    def process_job(job, thread_idx)
-      return unless job
-      logger = Logger.new(STDOUT)
-      logger.progname = "Worker-#{thread_idx}".ljust(10)
-      start = Time.now
-      job.status = 'EXECUTING'
+    def find_job
+      job = Biggles::Job::OneShot.where(status: 'SCHEDULABLE').first
+      return nil unless job
+      job.status = 'PENDING'
       job.save
-      logger.info "Starting executing of job #{job.id} using processor #{job.processor}"
+      job
+    end
+
+    def run_job(job)
+      start = Time.now
+      job.status = 'RUNNING'
+      job.save
+      logger = Logger.new(STDOUT)
+      logger.progname = "Job-#{job.id}"
+      logger.level = @logger.level
+      logger.info 'Starting...'
+      job_timeout = @opts['job_timeout']
       begin
         processor = Object.const_get(job.processor)
-        processor.send(:execute)
-        job.status = 'COMPLETED'
+        job_opts = JSON.parse(job.options)
+        Timeout.timeout(job_timeout) do
+          processor.send(:execute, job_opts)
+        end
+        job.status = 'COMPLETE'
       rescue NameError
-        logger.error "No processor '#{job.processor}' found for job #{job.id}"
+        logger.fatal "No processor '#{job.processor}' found for job #{job.id}"
         job.status = 'FAILED'
+      rescue Timeout::Error
+        logger.fatal "Job #{job.id} timed out after #{job_timeout} seconds."
+        job.status = 'FAILED'
+        job.save
+        return
       rescue => e
-        logger.error "Job #{job.id} failed: #{e.message}"
-        logger.error(e.backtrace)
+        logger.fatal "Job #{job.id} failed: #{e.message}"
+        e.backtrace.each do |line|
+          logger.debug "  #{line}"
+        end
         job.status = 'FAILED'
       end
       job.save
       duration = Time.now - start
-      logger.info "Finished execution of job #{job.id} with status #{job.status} in #{duration} seconds."
+      logger.info "Execution finished in #{duration} seconds"
+    end
+
+    def start_heartbeat
+      h = Biggles::Heartbeat.first
+      run_recovery if h
+    end
+
+    def stop_heartbeat; end
+
+    def run_recovery; end
+
+    def shutdown
+      @logger.warn 'Biggles shutting down...'
+      @workers.shutdown
+      unless @workers.wait_for_termination(20)
+        @logger.error 'Workers failed to terminate in time. Killing threads may leave inconsistent jobs.'
+        @workers.kill
+        @workers.wait_for_termination(10)
+      end
+      stop_heartbeat
     end
   end
 end

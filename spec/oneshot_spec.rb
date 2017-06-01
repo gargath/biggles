@@ -9,7 +9,7 @@ RSpec.describe Biggles::Job::OneShot do
       pool: 5,
       timeout: 5000
     )
-    Biggles.create_schema
+    Biggles.create_tables
   end
 
   after(:all) do
@@ -23,6 +23,8 @@ RSpec.describe Biggles::Job::OneShot do
                                      options: { x: 'y' })
     expect(j).not_to be_nil
     j.processor = 'AnotherProcessor'
-    expect { j.save }.to raise_error ActiveRecord::ReadOnlyRecord
+    j.save
+    j.reload
+    expect(j.processor).not_to eq('AnotherProcessor')
   end
 end

@@ -10,11 +10,12 @@ module Biggles
   module CLI
     def self.parse_config(filename)
       options = {
-        'loglevel'       => 'INFO',
-        'workers'        => 2,
-        'sweep_interval' => 30,
-        'jobs_dir'       => 'jobs',
-        'activerecord_logging' => false
+        'loglevel'             => 'INFO',
+        'workers'              => 2,
+        'sweep_interval'       => 30,
+        'jobs_dir'             => 'jobs',
+        'activerecord_logging' => false,
+        'job_timeout'          => 15
       }
       if File.exist?(filename)
         begin
@@ -53,9 +54,19 @@ module Biggles
       end
     end
 
+    def self.remove_schema
+      opts = parse_config('config/biggles.yml')
+      begin
+        connect(opts)
+        Biggles.remove_tables
+        puts 'Biggles tables successfully removed'
+      rescue => e
+        puts "Failed to remove database tables: #{e.message}"
+      end
+    end
+
     def self.connect(opts)
       private_class_method
-      puts '<>Connecting<>'
       begin
         if opts.key? 'database'
           puts 'Using DB configuration from Biggles config file'
