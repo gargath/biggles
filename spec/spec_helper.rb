@@ -4,6 +4,8 @@ require 'biggles/schema_helper'
 require 'biggles/job/oneshot'
 require 'otr-activerecord/activerecord'
 require 'otr-activerecord/middleware/connection_management.rb'
+require 'simplecov'
+SimpleCov.start
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
