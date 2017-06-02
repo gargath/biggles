@@ -22,3 +22,6 @@ Metrics/LineLength:
 
 Metrics/AbcSize:
   Max: 35
+
+Style/SpecialGlobalVars:
+  Enabled: false

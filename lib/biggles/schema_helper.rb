@@ -17,11 +17,11 @@ module Biggles
       c.create_table :biggles_scheduled
       c.create_table :biggles_recurring
     rescue
-
+      puts 'Failed to replace TODO tables PLACEHOLDER FIXME'
     end
 
     begin
-      c.create_table :biggles_heartbeat, id: false  do |t|
+      c.create_table :biggles_heartbeat, id: false do |t|
         t.column :pid, :string, unique: true
         t.column :timestamp, :timestamp
       end
