@@ -3,6 +3,7 @@ require 'json'
 require 'biggles/job/oneshot'
 require 'biggles/heartbeat'
 require 'concurrent'
+require 'active_record'
 
 module Biggles
   # Class to start and manage worker threads
@@ -111,7 +112,14 @@ module Biggles
 
     def start_heartbeat
       h = Biggles::Heartbeat.first
-      run_recovery if h
+      if h
+        if h.stale?
+          run_recovery
+        else
+          @logger.fatal "Another Biggles instance is already running with PID #{h.pid}"
+          exit 5
+        end
+      end
       h = Biggles::Heartbeat.create(pid: $$, timestamp: Time.now)
       h.save
       heartbeat_logger = Logger.new(STDOUT)
