@@ -137,7 +137,27 @@ module Biggles
       @logger.info 'Hearbeat stopped'
     end
 
-    def run_recovery; end
+    def run_recovery
+      @logger.warn 'Biggles was not shut down properly. Running recovery...'
+      jobs = Biggles::Job::OneShot.where(status: 'PENDING').all
+      unless jobs.empty?
+        @logger.warn "Recovery: Fixing #{jobs.length} jobs."
+        jobs.each do |job|
+          job.status = 'SCHEDULABLE'
+          job.save
+        end
+      end
+      jobs = Biggles::Job::OneShot.where(status: 'RUNNING').all
+      unless jobs.empty?
+        @logger.warn "Recovery: Marking #{jobs.length} incomplete jobs as FAILED."
+        jobs.each do |job|
+          job.status = 'FAILED'
+          job.save
+        end
+      end
+      Biggles::Heartbeat.delete_all
+      @logger.warn 'Recovery complete'
+    end
 
     def shutdown
       @logger.warn 'Biggles shutting down...'
