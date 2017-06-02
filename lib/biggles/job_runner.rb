@@ -5,6 +5,18 @@ require 'biggles/heartbeat'
 require 'concurrent'
 
 module Biggles
+  class TaskObserver
+    def update(time, _result, ex)
+      if result
+        puts 'Heartbeat completed successfully'
+      elsif ex.is_a? Concurrent::TimeoutErropr
+        puts 'Heartbeat timed out while trying to run'
+      else
+        puts "Heartbeat execution failed with error #{ex}"
+      end
+    end
+  end
+
   # Class to start and manage worker threads
   class JobRunner
     def initialize(options)
@@ -78,7 +90,7 @@ module Biggles
       job.status = 'RUNNING'
       job.save
       logger = Logger.new(STDOUT)
-      logger.progname = "Job-#{job.id}"
+      logger.progname = "Job-#{job.id}".ljust(10)
       logger.level = @logger.level
       logger.info 'Starting...'
       job_timeout = @opts['job_timeout']
@@ -112,9 +124,30 @@ module Biggles
     def start_heartbeat
       h = Biggles::Heartbeat.first
       run_recovery if h
+      h = Biggles::Heartbeat.create({pid: $$, timestamp: Time.now})
+      h.save
+      heartbeat_logger = Logger.new(STDOUT)
+      heartbeat_logger.progname='Heartbeat'.ljust(10)
+      @heartbeat = Concurrent::TimerTask.new(execution_interval: 60, timeout_interval: 10, run_now: true) do
+        begin
+          h.timestamp = Time.now
+          h.save
+          heartbeat_logger.debug '<thump>'
+        rescue => e
+          heartbeat_logger.error "Heartbeat failed to update DB because '#{e}' happened"
+        end
+      end
+      heartbeat_logger.info 'Heartbeat starting'
+      @heartbeat.execute
     end
 
-    def stop_heartbeat; end
+    def stop_heartbeat
+      @heartbeat.shutdown
+      @heartbeat.wait_for_termination
+      @logger.error 'Heartbeat failed to shut down. This may cause recovery to run needlessly during startup.' unless @heartbeat.shutdown?
+      Biggles::Heartbeat.delete_all
+      @logger.info 'Hearbeat stopped'
+    end
 
     def run_recovery; end
 
