@@ -1,8 +1,10 @@
+|[![Code Climate](https://codeclimate.com/github/gargath/biggles/badges/gpa.svg)](https://codeclimate.com/github/gargath/biggles)|[![Code Climate](https://codeclimate.com/github/gargath/biggles/badges/coverage.svg)](https://codeclimate.com/github/gargath/biggles)|[![Code Climate](https://codeclimate.com/github/gargath/biggles/badges/issue_count.svg)](https://codeclimate.com/github/gargath/biggles)|[![Build Status](https://travis-ci.org/gargath/biggles.svg?branch=master)](https://travis-ci.org/gargath/biggles)|
+|---|---|---|---|
+
+
 # Biggles
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/biggles`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Biggles is a job scheduler based on ActiveRecord.
 
 ## Installation
 
@@ -10,6 +12,13 @@ Add this line to your application's Gemfile:
 
 ```ruby
 gem 'biggles'
+```
+
+Biggles uses the concurrent-ruby gem for thread management.
+If desired, you can install native C extensions for MRI Ruby by adding them to your Gemfile:
+
+```ruby
+gem 'concurrent-ruby-ext'
 ```
 
 And then execute:
@@ -22,7 +31,17 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Before using biggles, you need to create the required database tables in your application's database.
+If your application already uses `config/database.yml` for configuration, simply run
+    
+    $ biggles create_schema
+    
+You may also configura the database connection manually in `config/biggles.yml`.
+
+You can interact with biggles Jobs like any other ActiveRecord object.
+In order to execute the jobs, start the Biggles process using
+
+    $ biggles start
 
 ## Development
 
@@ -32,12 +51,12 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/biggles. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/gargath/biggles. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
+The gem is available as open source under the terms of the [LGPL-3.0](https://opensource.org/licenses/LGPL-3.0).
 
 ## Code of Conduct
 
-Everyone interacting in the Biggles project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/biggles/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the Biggles project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/gargath/biggles/blob/master/CODE_OF_CONDUCT.md).
