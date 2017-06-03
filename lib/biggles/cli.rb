@@ -20,7 +20,7 @@ module Biggles
         begin
           options.merge! YAML.load_file(filename)
         rescue => e
-          STDERR.puts "Failed to parse configuration file #{filename}: #{e.message}"
+          $stderr.puts "Failed to parse configuration file #{filename}: #{e.message}"
           exit 1
         end
       else
@@ -73,7 +73,7 @@ module Biggles
             "#{Dir.pwd}/config/database.yml"
           )
         else
-          STDERR.puts 'No DB configuration found. Biggles cannot continue.'
+          $stderr.puts 'No DB configuration found. Biggles cannot continue.'
           exit 2
         end
         if opts['activerecord_logging']
@@ -86,8 +86,8 @@ module Biggles
         end
         ActiveRecord::Base.connection
       rescue => e
-        STDERR.puts 'Failed to configure DB connection:'
-        STDERR.puts e.message
+        $stderr.puts 'Failed to configure DB connection:'
+        $stderr.puts e.message
         exit 2
       end
     end

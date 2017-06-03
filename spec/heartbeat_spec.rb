@@ -1,6 +1,6 @@
 require './spec/spec_helper.rb'
 
-RSpec.describe Biggles::Job::OneShot do
+RSpec.describe Biggles::Heartbeat do
   before(:all) do
     OTR::ActiveRecord.configure_from_hash!(
       adapter: 'sqlite3',
@@ -18,13 +18,12 @@ RSpec.describe Biggles::Job::OneShot do
     File.delete('test.sqlite3') if File.exist?('test.sqlite3')
   end
 
-  it 'prevents updates to existing jobs' do
-    j = Biggles::Job::OneShot.create(processor: 'TestProcessor',
-                                     options: { x: 'y' })
-    expect(j).not_to be_nil
-    j.processor = 'AnotherProcessor'
-    j.save
-    j.reload
-    expect(j.processor).not_to eq('AnotherProcessor')
+  it 'correctly reports staleness' do
+    hb1 = Biggles::Heartbeat.create(pid: 123, timestamp: Time.now)
+    hb2 = Biggles::Heartbeat.create(pid: 123, timestamp: Time.now - 60_000)
+    hb1.save
+    hb2.save
+    expect(hb1.stale?).to be false
+    expect(hb2.stale?).to be true
   end
 end

@@ -1,6 +1,7 @@
 # Helper methods for schema management
 module Biggles
   def self.create_tables
+    success = true
     c = ActiveRecord::Base.connection
     begin
       c.create_table :biggles_one_shot do |t|
@@ -10,14 +11,16 @@ module Biggles
         t.column :status, :string
       end
     rescue => e
-      puts "Failed to create table biggles_one_shot: #{e}"
+      $stderr.puts "Failed to create table biggles_one_shot: #{e}"
+      success = false
     end
 
     begin
       c.create_table :biggles_scheduled
       c.create_table :biggles_recurring
     rescue
-      puts 'Failed to replace TODO tables PLACEHOLDER FIXME'
+      $stderr.puts 'Failed to create other tables for some reason (who case?)'
+      success = false
     end
 
     begin
@@ -26,8 +29,10 @@ module Biggles
         t.column :timestamp, :timestamp
       end
     rescue => e
-      puts "Failed to create table biggles_heartbeat: #{e}"
+      $stderr.puts "Failed to create table biggles_heartbeat: #{e}"
+      success = false
     end
+    success
   end
 
   def self.remove_tables
