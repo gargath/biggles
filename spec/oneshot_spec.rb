@@ -1,8 +1,7 @@
-require 'spec_helper'
+require './spec/spec_helper.rb'
 
 RSpec.describe Biggles::Job::OneShot do
   before(:all) do
-    ENV['rack_env'] = 'test'
     OTR::ActiveRecord.configure_from_hash!(
       adapter: 'sqlite3',
       database: 'test.sqlite3',

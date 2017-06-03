@@ -1,4 +1,4 @@
-require 'spec_helper'
+require './spec/spec_helper.rb'
 
 RSpec.describe Biggles do
   it 'has a version number' do

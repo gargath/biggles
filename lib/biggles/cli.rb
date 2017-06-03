@@ -12,7 +12,6 @@ module Biggles
       options = {
         'loglevel'             => 'INFO',
         'workers'              => 2,
-        'sweep_interval'       => 30,
         'jobs_dir'             => 'jobs',
         'activerecord_logging' => false,
         'job_timeout'          => 15
@@ -21,19 +20,19 @@ module Biggles
         begin
           options.merge! YAML.load_file(filename)
         rescue => e
-          puts "Failed to parse configuration file #{filename}: #{e.message}"
+          STDERR.puts "Failed to parse configuration file #{filename}: #{e.message}"
           exit 1
         end
       else
         puts 'No configuration file found, using defaults.'
       end
+      options['loglevel'].upcase!
       options
     end
 
-    def self.start
-      opts = parse_config('config/biggles.yml')
+    def self.start(config_file = 'config/biggles.yml')
+      opts = parse_config(config_file)
       connect(opts)
-
       if Dir.exist? opts['jobs_dir']
         require_all opts['jobs_dir']
       else
@@ -43,26 +42,23 @@ module Biggles
       runner.start
     end
 
-    def self.create_schema
-      opts = parse_config('config/biggles.yml')
+    def self.schema(direction, config_file = 'config/biggles.yml')
+      dirword = direction == :up ? 'create' : 'remove'
+      opts = parse_config(config_file)
       begin
         connect(opts)
-        Biggles.create_tables
-        puts 'Database schema successfully created'
+        if direction == :up
+          Biggles.create_tables
+        elsif direction == :down
+          Biggles.remove_tables
+        else
+          raise ArgumentError, 'Schema can only go :up or :down'
+        end
+        puts "Biggles tables successfully #{dirword}d"
       rescue => e
-        puts "Failed to create database schema: #{e.message}"
+        puts "Failed to #{dirword} database tables: #{e.message}"
       end
-    end
-
-    def self.remove_schema
-      opts = parse_config('config/biggles.yml')
-      begin
-        connect(opts)
-        Biggles.remove_tables
-        puts 'Biggles tables successfully removed'
-      rescue => e
-        puts "Failed to remove database tables: #{e.message}"
-      end
+      ActiveRecord::Base.remove_connection
     end
 
     def self.connect(opts)
@@ -79,6 +75,14 @@ module Biggles
         else
           STDERR.puts 'No DB configuration found. Biggles cannot continue.'
           exit 2
+        end
+        if opts['activerecord_logging']
+          ar_logger = Logger.new(STDOUT)
+          ar_logger.level = opts['loglevel']
+          ar_logger.progname = 'SQL'.ljust(10)
+          ActiveRecord::Base.logger = ar_logger
+        else
+          ActiveRecord::Base.logger = nil
         end
         ActiveRecord::Base.connection
       rescue => e

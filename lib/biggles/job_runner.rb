@@ -13,14 +13,6 @@ module Biggles
       @logger = Logger.new(STDOUT)
       @logger.level = @opts['loglevel']
       @logger.progname = 'Main'.ljust(10)
-      if @opts['activerecord_logging']
-        ar_logger = Logger.new(STDOUT)
-        ar_logger.level = @opts['loglevel']
-        ar_logger.progname = 'SQL'.ljust(10)
-        ActiveRecord::Base.logger = ar_logger
-      else
-        ActiveRecord::Base.logger = nil
-      end
       @exiting = false
       @workers = Concurrent::FixedThreadPool.new(@opts['workers'],
                                                  idletime: 60,

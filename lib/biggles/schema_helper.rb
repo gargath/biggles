@@ -36,5 +36,10 @@ module Biggles
     c.drop_table :biggles_scheduled
     c.drop_table :biggles_recurring
     c.drop_table :biggles_heartbeat
+    if c.is_a? ActiveRecord::ConnectionAdapters::SQLite3Adapter
+      c.execute('DELETE FROM sqlite_sequence WHERE name = \'biggles_one_shot\'')
+    else
+      c.execute('DROP SEQUENCE biggles_one_shot_sequence')
+    end
   end
 end

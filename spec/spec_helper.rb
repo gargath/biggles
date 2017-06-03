@@ -1,3 +1,4 @@
+require 'rspec'
 require 'simplecov'
 SimpleCov.start
 require 'bundler/setup'
@@ -20,5 +21,43 @@ RSpec.configure do |config|
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
+  end
+end
+
+module ConfigHelper
+  def self.write_configs
+    File.open('biggles_spec_full_config.yml', 'w') do |file|
+      file.write("workers: 5\n"\
+                   "loglevel: debug\n"\
+                   "jobs_dir: myjobs\n"\
+                   "database:\n"\
+                   "  adapter: 'sqlite3'\n"\
+                   "  database: 'test.sqlite3'\n"\
+                   "  pool: 10\n"\
+                   "  timeout: 5000\n"\
+                   "activerecord_logging: true\n"\
+                   "job_timeout: 8\n")
+    end
+    File.open('biggles_spec_broken_config.yml', 'w') do |file|
+      file.write('invalid yaml')
+    end
+    File.open('biggles_spec_config.yml', 'w') do |file|
+      file.write("workers: 5\n"\
+                     "loglevel: debug\n"\
+                     "jobs_dir: myjobs\n"\
+                     "database:\n"\
+                     "  adapter: 'sqlite3'\n"\
+                     "  database: 'test.sqlite3'\n"\
+                     "  pool: 10\n"\
+                     "  timeout: 5000\n"\
+                     "activerecord_logging: false\n"\
+                     "job_timeout: 8\n")
+    end
+  end
+
+  def self.delete_configs
+    File.delete 'biggles_spec_full_config.yml'
+    File.delete 'biggles_spec_broken_config.yml'
+    File.delete 'biggles_spec_config.yml'
   end
 end
