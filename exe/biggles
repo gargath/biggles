@@ -46,9 +46,9 @@ case main_command
 when 'start'
   Biggles::CLI.start
 when 'create_schema'
-  Biggles::CLI.create_schema
+  Biggles::CLI.schema(:up)
 when 'remove_schema'
-  Biggles::CLI.remove_schema
+  Biggles::CLI.schema(:down)
 when 'list'
   Biggles::CLI.list
 else

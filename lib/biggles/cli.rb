@@ -42,26 +42,21 @@ module Biggles
       runner.start
     end
 
-    def self.create_schema(config_file = 'config/biggles.yml')
+    def self.schema(direction, config_file = 'config/biggles.yml')
+      dirword = direction == :up ? 'create' : 'remove'
       opts = parse_config(config_file)
       begin
         connect(opts)
-        Biggles.create_tables
-        puts 'Database schema successfully created'
+        if direction == :up
+          Biggles.create_tables
+        elsif direction == :down
+          Biggles.remove_tables
+        else
+          raise ArgumentError, 'Schema can only go :up or :down'
+        end
+        puts "Biggles tables successfully #{dirword}d"
       rescue => e
-        puts "Failed to create database schema: #{e.message}"
-      end
-      ActiveRecord::Base.remove_connection
-    end
-
-    def self.remove_schema(config_file = 'config/biggles.yml')
-      opts = parse_config(config_file)
-      begin
-        connect(opts)
-        Biggles.remove_tables
-        puts 'Biggles tables successfully removed'
-      rescue => e
-        puts "Failed to remove database tables: #{e.message}"
+        puts "Failed to #{dirword} database tables: #{e.message}"
       end
       ActiveRecord::Base.remove_connection
     end
