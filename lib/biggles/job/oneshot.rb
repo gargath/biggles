@@ -7,6 +7,7 @@ module Biggles
     class OneShot < ActiveRecord::Base
       attr_readonly :processor, :id
       self.table_name = 'biggles_one_shot'
+      self.sequence_name = 'biggles_one_shot_sequence'
     end
   end
 end
