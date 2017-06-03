@@ -1,11 +1,15 @@
 require 'simplecov'
 SimpleCov.start
 require 'bundler/setup'
-require 'biggles'
-require 'biggles/schema_helper'
-require 'biggles/job/oneshot'
 require 'otr-activerecord/activerecord'
 require 'otr-activerecord/middleware/connection_management.rb'
+require 'biggles'
+require 'biggles/cli'
+require 'biggles/heartbeat'
+require 'biggles/job_runner'
+require 'biggles/schema_helper'
+require 'biggles/version'
+require 'biggles/job/oneshot'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

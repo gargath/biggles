@@ -3,6 +3,7 @@ require 'json'
 require 'biggles/job/oneshot'
 require 'biggles/heartbeat'
 require 'concurrent'
+require 'active_record'
 
 module Biggles
   # Class to start and manage worker threads
@@ -78,7 +79,7 @@ module Biggles
       job.status = 'RUNNING'
       job.save
       logger = Logger.new(STDOUT)
-      logger.progname = "Job-#{job.id}"
+      logger.progname = "Job-#{job.id}".ljust(10)
       logger.level = @logger.level
       logger.info 'Starting...'
       job_timeout = @opts['job_timeout']
@@ -111,12 +112,60 @@ module Biggles
 
     def start_heartbeat
       h = Biggles::Heartbeat.first
-      run_recovery if h
+      if h
+        if h.stale?
+          run_recovery
+        else
+          @logger.fatal "Another Biggles instance is already running with PID #{h.pid}"
+          exit 5
+        end
+      end
+      h = Biggles::Heartbeat.create(pid: $$, timestamp: Time.now)
+      h.save
+      heartbeat_logger = Logger.new(STDOUT)
+      heartbeat_logger.progname = 'Heartbeat'.ljust(10)
+      @heartbeat = Concurrent::TimerTask.new(execution_interval: 60, timeout_interval: 10, run_now: true) do
+        begin
+          h.timestamp = Time.now
+          h.save
+          heartbeat_logger.debug '<thump>'
+        rescue => e
+          heartbeat_logger.error "Heartbeat failed to update DB because '#{e}' happened"
+        end
+      end
+      heartbeat_logger.info 'Heartbeat starting'
+      @heartbeat.execute
     end
 
-    def stop_heartbeat; end
+    def stop_heartbeat
+      @heartbeat.shutdown
+      @heartbeat.wait_for_termination
+      @logger.error 'Heartbeat failed to shut down properly.' unless @heartbeat.shutdown?
+      Biggles::Heartbeat.delete_all
+      @logger.info 'Hearbeat stopped'
+    end
 
-    def run_recovery; end
+    def run_recovery
+      @logger.warn 'Biggles was not shut down properly. Running recovery...'
+      jobs = Biggles::Job::OneShot.where(status: 'PENDING').all
+      unless jobs.empty?
+        @logger.warn "Recovery: Fixing #{jobs.length} jobs."
+        jobs.each do |job|
+          job.status = 'SCHEDULABLE'
+          job.save
+        end
+      end
+      jobs = Biggles::Job::OneShot.where(status: 'RUNNING').all
+      unless jobs.empty?
+        @logger.warn "Recovery: Marking #{jobs.length} incomplete jobs as FAILED."
+        jobs.each do |job|
+          job.status = 'FAILED'
+          job.save
+        end
+      end
+      Biggles::Heartbeat.delete_all
+      @logger.warn 'Recovery complete'
+    end
 
     def shutdown
       @logger.warn 'Biggles shutting down...'

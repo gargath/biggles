@@ -3,7 +3,7 @@ loglevel: debug
 database:
   adapter: 'sqlite3'
   database: 'prod.sqlite3'
-  pool: 5
+  pool: 10
   timeout: 5000
 activerecord_logging: false
 job_timeout: 8

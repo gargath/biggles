@@ -2,17 +2,31 @@
 module Biggles
   def self.create_tables
     c = ActiveRecord::Base.connection
-    c.create_table :biggles_one_shot do |t|
-      t.column :name, :string
-      t.column :processor, :string
-      t.column :options, :text, limit: 100_000
-      t.column :status, :string
+    begin
+      c.create_table :biggles_one_shot do |t|
+        t.column :name, :string
+        t.column :processor, :string
+        t.column :options, :text, limit: 100_000
+        t.column :status, :string
+      end
+    rescue => e
+      puts "Failed to create table biggles_one_shot: #{e}"
     end
-    c.create_table :biggles_scheduled
-    c.create_table :biggles_recurring
-    c.create_table :biggles_heartbeat, id: false do |t|
-      t.column :pid, :string
-      t.column :timestamp, :timestamp
+
+    begin
+      c.create_table :biggles_scheduled
+      c.create_table :biggles_recurring
+    rescue
+      puts 'Failed to replace TODO tables PLACEHOLDER FIXME'
+    end
+
+    begin
+      c.create_table :biggles_heartbeat, id: false do |t|
+        t.column :pid, :string, unique: true
+        t.column :timestamp, :timestamp
+      end
+    rescue => e
+      puts "Failed to create table biggles_heartbeat: #{e}"
     end
   end
 
