@@ -1,3 +1,3 @@
 module Biggles
-  VERSION = '0.0.1'.freeze
+  VERSION = '0.1.0-alpha'.freeze
 end
