@@ -18,6 +18,8 @@ module Biggles
                                                  idletime: 60,
                                                  max_queue: @opts['workers'],
                                                  fallback_policy: :abort)
+      @queue_event = Concurrent::Event.new
+      @queue_event.set
     end
 
     def start
@@ -26,18 +28,23 @@ module Biggles
       trap_signals
       start_heartbeat
       loop do
-        job = find_job if @workers.remaining_capacity > 0
-        if job
-          begin
-            @logger.debug "Job #{job.id} enqueued, waiting for worker."
-            @workers.post { run_job(job) }
-          rescue Concurrent::RejectedExecutionError
-            @logger.warn 'Failed to enqueue job. Queue full.'
-            job.status = 'SCHEDULABLE'
-            job.save
+        if @workers.remaining_capacity > 0
+          job = find_job
+          if job
+            begin
+              @logger.debug "Job #{job.id} enqueued, waiting for worker."
+              @workers.post { run_job(job) }
+            rescue Concurrent::RejectedExecutionError
+              @logger.warn 'Failed to enqueue job. Queue full.'
+              job.status = 'SCHEDULABLE'
+              job.save
+            end
+          else
+            sleep 10
           end
         else
-          sleep 2
+          @queue_event.reset
+          @queue_event.wait
         end
         break if @exiting
       end
@@ -67,39 +74,42 @@ module Biggles
     end
 
     def run_job(job)
-      start = Time.now
-      job.status = 'RUNNING'
-      job.save
-      logger = Logger.new($stdout)
-      logger.progname = "Job-#{job.id}".ljust(10)
-      logger.level = @logger.level
-      logger.info 'Starting...'
-      job_timeout = @opts['job_timeout']
-      begin
-        processor = Object.const_get(job.processor)
-        job_opts = JSON.parse(job.options)
-        Timeout.timeout(job_timeout) do
-          processor.send(:execute, job_opts)
-        end
-        job.status = 'COMPLETE'
-      rescue NameError
-        logger.fatal "No processor '#{job.processor}' found for job #{job.id}"
-        job.status = 'FAILED'
-      rescue Timeout::Error
-        logger.fatal "Job #{job.id} timed out after #{job_timeout} seconds."
-        job.status = 'FAILED'
+      ActiveRecord::Base.connection_pool.with_connection do
+        start = Time.now
+        job.status = 'RUNNING'
         job.save
-        return
-      rescue => e
-        logger.fatal "Job #{job.id} failed: #{e.message}"
-        e.backtrace.each do |line|
-          logger.debug "  #{line}"
+        logger = Logger.new($stdout)
+        logger.progname = "Job-#{job.id}".ljust(10)
+        logger.level = @logger.level
+        logger.info 'Starting...'
+        job_timeout = @opts['job_timeout']
+        begin
+          processor = Object.const_get(job.processor)
+          job_opts = JSON.parse(job.options)
+          Timeout.timeout(job_timeout) do
+            processor.send(:execute, job_opts)
+          end
+          job.status = 'COMPLETE'
+        rescue NameError
+          logger.fatal "No processor '#{job.processor}' found for job #{job.id}"
+          job.status = 'FAILED'
+        rescue Timeout::Error
+          logger.fatal "Job #{job.id} timed out after #{job_timeout} seconds."
+          job.status = 'FAILED'
+          job.save
+          return
+        rescue => e
+          logger.fatal "Job #{job.id} failed: #{e.message}"
+          e.backtrace.each do |line|
+            logger.debug "  #{line}"
+          end
+          job.status = 'FAILED'
         end
-        job.status = 'FAILED'
+        job.save
+        duration = Time.now - start
+        @queue_event.set
+        logger.info "Execution finished in #{duration} seconds"
       end
-      job.save
-      duration = Time.now - start
-      logger.info "Execution finished in #{duration} seconds"
     end
 
     def start_heartbeat
@@ -123,8 +133,8 @@ module Biggles
             h.save
             heartbeat_logger.debug '<thump>'
           end
-          rescue => e
-            heartbeat_logger.error "Heartbeat failed to update DB because '#{e}' happened"
+        rescue => e
+          heartbeat_logger.error "Heartbeat failed to update DB because '#{e}' happened"
         end
       end
       heartbeat_logger.info 'Heartbeat starting'
