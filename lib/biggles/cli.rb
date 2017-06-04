@@ -36,7 +36,7 @@ module Biggles
       if Dir.exist? opts['jobs_dir']
         require_all opts['jobs_dir']
       else
-        @logger.warn "Jobs director #{opts['jobs_dir']} not found. Jobs will likely not work."
+        $stderr.puts "Jobs directory #{opts['jobs_dir']} not found. Jobs will likely not work."
       end
       runner = Biggles::JobRunner.new(opts)
       runner.start
