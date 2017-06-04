@@ -116,13 +116,15 @@ module Biggles
       h.save
       heartbeat_logger = Logger.new($stdout)
       heartbeat_logger.progname = 'Heartbeat'.ljust(10)
-      @heartbeat = Concurrent::TimerTask.new(execution_interval: 60, timeout_interval: 10, run_now: true) do
+      @heartbeat = Concurrent::TimerTask.new(execution_interval: 5, timeout_interval: 1, run_now: true) do
         begin
-          h.timestamp = Time.now
-          h.save
-          heartbeat_logger.debug '<thump>'
-        rescue => e
-          heartbeat_logger.error "Heartbeat failed to update DB because '#{e}' happened"
+          ActiveRecord::Base.connection_pool.with_connection do
+            h.timestamp = Time.now
+            h.save
+            heartbeat_logger.debug '<thump>'
+          end
+          rescue => e
+            heartbeat_logger.error "Heartbeat failed to update DB because '#{e}' happened"
         end
       end
       heartbeat_logger.info 'Heartbeat starting'
