@@ -77,7 +77,7 @@ module Biggles
           exit 2
         end
         if opts['activerecord_logging']
-          ar_logger = Logger.new(STDOUT)
+          ar_logger = Logger.new($stdout)
           ar_logger.level = opts['loglevel']
           ar_logger.progname = 'SQL'.ljust(10)
           ActiveRecord::Base.logger = ar_logger

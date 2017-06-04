@@ -10,7 +10,7 @@ module Biggles
   class JobRunner
     def initialize(options)
       @opts = options
-      @logger = Logger.new(STDOUT)
+      @logger = Logger.new($stdout)
       @logger.level = @opts['loglevel']
       @logger.progname = 'Main'.ljust(10)
       @exiting = false
@@ -70,7 +70,7 @@ module Biggles
       start = Time.now
       job.status = 'RUNNING'
       job.save
-      logger = Logger.new(STDOUT)
+      logger = Logger.new($stdout)
       logger.progname = "Job-#{job.id}".ljust(10)
       logger.level = @logger.level
       logger.info 'Starting...'
@@ -114,7 +114,7 @@ module Biggles
       end
       h = Biggles::Heartbeat.create(pid: $$, timestamp: Time.now)
       h.save
-      heartbeat_logger = Logger.new(STDOUT)
+      heartbeat_logger = Logger.new($stdout)
       heartbeat_logger.progname = 'Heartbeat'.ljust(10)
       @heartbeat = Concurrent::TimerTask.new(execution_interval: 60, timeout_interval: 10, run_now: true) do
         begin
