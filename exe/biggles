@@ -2,8 +2,8 @@
 
 require 'biggles/cli'
 
-$stdout.sync
-$stderr.sync
+$stdout.sync = true
+$stderr.sync = true
 
 def usage
   puts 'Usage: biggles [command] <-c config_file>'
