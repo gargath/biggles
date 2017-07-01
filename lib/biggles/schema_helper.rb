@@ -8,7 +8,7 @@ module Biggles
         t.column :name, :string
         t.column :processor, :string
         t.column :options, :text, limit: 100_000
-        t.column :status, :string
+        t.column :status, :string, null: false, default: 'SCHEDULABLE'
       end
     rescue => e
       $stderr.puts "Failed to create table biggles_one_shot: #{e}"
