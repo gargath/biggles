@@ -126,7 +126,7 @@ module Biggles
       h.save
       heartbeat_logger = Logger.new($stdout)
       heartbeat_logger.progname = 'Heartbeat'.ljust(10)
-      @heartbeat = Concurrent::TimerTask.new(execution_interval: 10, timeout_interval: 1, run_now: true) do
+      @heartbeat = Concurrent::TimerTask.new(execution_interval: 5, timeout_interval: 1, run_now: true) do
         begin
           ActiveRecord::Base.connection_pool.with_connection do
             h.timestamp = Time.now
