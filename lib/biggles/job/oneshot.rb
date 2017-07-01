@@ -13,7 +13,6 @@ module Biggles
       def options=(opts)
         write_attribute(:options, opts.to_json)
       end
-
     end
   end
 end
