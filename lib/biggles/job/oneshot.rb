@@ -1,4 +1,5 @@
 require 'active_record'
+require 'json'
 
 module Biggles
   module Job
@@ -8,7 +9,11 @@ module Biggles
       attr_readonly :processor, :id
       self.table_name = 'biggles_one_shot'
       self.sequence_name = 'biggles_one_shot_sequence'
-      serialize :options, Hash
+
+      def options=(opts)
+        write_attribute(:options, opts.to_json)
+      end
+
     end
   end
 end
