@@ -66,7 +66,8 @@ module Biggles
     end
 
     def find_job
-      job = Biggles::Job::OneShot.where(status: 'SCHEDULABLE').first
+      job = Biggles::Job::Scheduled.where(status: 'SCHEDULABLE').where('due > ?', Time.now).first
+      job = Biggles::Job::OneShot.where(status: 'SCHEDULABLE').first unless job
       return nil unless job
       job.status = 'PENDING'
       job.save

@@ -11,6 +11,7 @@ require 'biggles/job_runner'
 require 'biggles/schema_helper'
 require 'biggles/version'
 require 'biggles/job/oneshot'
+require 'biggles/job/scheduled'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

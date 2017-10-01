@@ -1,22 +1,12 @@
 # Helper methods for schema management
 module Biggles
   def self.create_tables
-    success = true
     c = ActiveRecord::Base.connection
-    begin
-      c.create_table :biggles_one_shot do |t|
-        t.column :name, :string
-        t.column :processor, :string
-        t.column :options, :text, limit: 100_000
-        t.column :status, :string, null: false, default: 'SCHEDULABLE'
-      end
-    rescue => e
-      $stderr.puts "Failed to create table biggles_one_shot: #{e}"
-      success = false
-    end
+    success = true
+    success = false unless create_one_shot(c)
+    success = false unless create_scheduled(c)
 
     begin
-      c.create_table :biggles_scheduled
       c.create_table :biggles_recurring
     rescue
       $stderr.puts 'Failed to create other tables for some reason (who case?)'
@@ -47,5 +37,36 @@ module Biggles
     else
       c.execute('DROP SEQUENCE biggles_one_shot_sequence')
     end
+  end
+
+  def self.create_one_shot(c)
+    begin
+      c.create_table :biggles_one_shot do |t|
+        t.column :name, :string
+        t.column :processor, :string
+        t.column :options, :text, limit: 100_000
+        t.column :status, :string, null: false, default: 'SCHEDULABLE'
+      end
+    rescue => e
+      $stderr.puts "Failed to create table biggles_one_shot: #{e}"
+      return false
+    end
+    true
+  end
+
+  def self.create_scheduled(c)
+    begin
+      c.create_table :biggles_scheduled do |t|
+        t.column :name, :string
+        t.column :processor, :string
+        t.column :options, :text, limit: 100_000
+        t.column :status, :string, null: false, default: 'SCHEDULABLE'
+        t.column :due, :datetime
+      end
+    rescue => e
+      $stderr.puts "Failed to create table biggles_scheduled: #{e}"
+      return false
+    end
+    true
   end
 end
