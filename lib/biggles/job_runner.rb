@@ -66,7 +66,8 @@ module Biggles
     end
 
     def find_job
-      job = Biggles::Job::OneShot.where(status: 'SCHEDULABLE').first
+      job = Biggles::Job::Scheduled.where(status: 'SCHEDULABLE').where('due > ?', Time.now).first
+      job = Biggles::Job::OneShot.where(status: 'SCHEDULABLE').first unless job
       return nil unless job
       job.status = 'PENDING'
       job.save
@@ -131,7 +132,6 @@ module Biggles
           ActiveRecord::Base.connection_pool.with_connection do
             h.timestamp = Time.now
             h.save
-            heartbeat_logger.debug '<thump>'
           end
         rescue => e
           heartbeat_logger.error "Heartbeat failed to update DB because '#{e}' happened"
