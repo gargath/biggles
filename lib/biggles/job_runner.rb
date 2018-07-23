@@ -1,6 +1,7 @@
 require 'thread'
 require 'json'
 require 'biggles/job/oneshot'
+require 'biggles/job/scheduled'
 require 'biggles/heartbeat'
 require 'concurrent'
 require 'active_record'
